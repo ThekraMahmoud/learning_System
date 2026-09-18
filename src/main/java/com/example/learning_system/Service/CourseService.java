@@ -18,21 +18,19 @@ public class CourseService {
     }
 
 
-    public String add(Course course) {
+    public boolean add(Course course) {
         for (Course c : courses) {
             if (c.getId().equals(course.getId())) {
-                return "false";
+                return false;
             }
-            if(c.getClassRoomNumber().equals(course.getClassRoomNumber())){
-                return "false";
+            if (c.getClassRoomNumber().equals(course.getClassRoomNumber())) {
+                return false;
             }
         }
-        if (course.haveTeacher) {
-            courses.add(course);
-            return "true";
-        }
-        return "teacherFalse";
+        return true;
     }
+
+
 
 
     public String update(String id, Course course) {
@@ -44,6 +42,7 @@ public class CourseService {
                 return "false";
             }
 
+// If the course does not have a teacher, it cannot have any students.
             if (courses.get(i).getId().equals(id)) {
                 if (!course.getHaveTeacher()) {
                     if (course.getStudentNumber() != 0) {
