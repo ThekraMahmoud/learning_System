@@ -1,107 +1,85 @@
-package com.example.learning_system.Controller;
+package com.example.learning_system.Service;
 
-import com.example.learning_system.Api.ApiResponse;
-import com.example.learning_system.Model.Exam;
-import com.example.learning_system.Service.ExamService;
-import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.validation.Errors;
-import org.springframework.web.bind.annotation.*;
+
+import com.example.learning_system.Model.Course;
+import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 
-@AllArgsConstructor
-@RestController
-@RequestMapping("/api/v1/exam")
-public class ExamController {
-
-    private final ExamService examService;
+@Service
+public class CourseService {
 
 
-    @GetMapping("/get")
-    public ResponseEntity<?> get() {
-        ArrayList<Exam> e = examService.get();
-        return ResponseEntity.status(200).body(e);
+    ArrayList<Course> courses = new ArrayList<>();
+
+
+    public ArrayList<Course> get() {
+        return courses;
     }
 
 
-    @PutMapping("/add")
-    public ResponseEntity<?> add(@RequestBody @Valid Exam exam, Errors err) {
-        if (err.hasErrors()) {
-            String message = err.getFieldError().getDefaultMessage();
-            return ResponseEntity.status(400).body(message);
+    public boolean add(Course course) {
+        for (Course c : courses) {
+            if (c.getId().equals(course.getId())) {
+                return false;
+            }
+            if (c.getClassRoomNumber().equals(course.getClassRoomNumber())) {
+                return false;
+            }
         }
-        String check = examService.add(exam);
-        return switch (check) {
-            case "false" -> ResponseEntity.status(400).body(new ApiResponse("ID already used"));
-            case "Quiz" -> ResponseEntity.status(400).body(new ApiResponse("Quiz total marks must be 15 or less"));
-            case "Midterm" -> ResponseEntity.status(400).body(new ApiResponse("Midterm total marks must be 30 or less"));
-            case "Final" -> ResponseEntity.status(400).body(new ApiResponse("Final total marks must be 100"));
-            case "true" -> ResponseEntity.status(200).body(new ApiResponse("Add success"));
-
-            default -> ResponseEntity.status(400).body(new ApiResponse("Unexpected error"));
-        };
+        return true;
     }
 
 
-    @PutMapping("/update/{id}")
-    public ResponseEntity<?> update(
-            @PathVariable String id,
-            @RequestBody @Valid Exam exam,
-            Errors errors) {
 
-        if (errors.hasErrors()) {
-            String message = errors.getFieldError().getDefaultMessage();
-            return ResponseEntity.status(400).body(message);
+
+    public String update(String id, Course course) {
+        for (int i = 0; i < courses.size(); i++) {
+            if (!courses.get(i).getId().equals(id) && courses.get(i).getId().equals(course.getId())) {
+                return "false";
+            }
+            if(!courses.get(i).getId().equals(id)&&courses.get(i).classRoomNumber.equals(course.getClassRoomNumber())){
+                return "false";
+            }
+
+// If the course does not have a teacher, it cannot have any students.
+            if (courses.get(i).getId().equals(id)) {
+                if (!course.getHaveTeacher()) {
+                    if (course.getStudentNumber() != 0) {
+                        return "not Allow number";
+                    }
+                }
+                courses.set(i, course);
+            }
         }
-
-        String check = examService.update(id, exam);
-
-        return switch (check) {
-            case "false" -> ResponseEntity.status(400).body(new ApiResponse("ID already used"));
-            case "Quiz" -> ResponseEntity.status(400).body(new ApiResponse("Quiz total marks must be 15 or less"));
-            case "Midterm" -> ResponseEntity.status(400).body(new ApiResponse("Midterm total marks must be 30 or less"));
-            case "Final" -> ResponseEntity.status(400).body(new ApiResponse("Final total marks must be 100"));
-            case "true" -> ResponseEntity.status(200).body(new ApiResponse("Update success"));
-            default -> ResponseEntity.status(404).body(new ApiResponse("Exam not found"));
-        };
+        return "true";
     }
 
 
-    @DeleteMapping("/delete/{id}")
-    public ResponseEntity<?> delete(@PathVariable String id) {
-        if (examService.delete(id)) {
-            return ResponseEntity.status(200).body(new ApiResponse("Remove success"));
+    public String delete(String id) {
+        for (Course c : courses) {
+            if (c.getId().equals(id)) {
+                if (c.getStudentNumber() > 0) {
+                    return "has student";
+                }
+                courses.remove(c);
+                return "true";
+            }
         }
-        return ResponseEntity.status(404).body(new ApiResponse("ID not found"));
+        return "not found";
     }
 
 
-    @GetMapping("/search/{id}")
-    public ResponseEntity<?> search(@PathVariable String id) {
-        Exam exam = examService.search(id);
-        if (exam == null) {
-            return ResponseEntity.status(400).body(new ApiResponse("ID not found"));
-        }
-        return ResponseEntity.status(200).body(exam);
-    }
 
-    @GetMapping("/getExam/{exam}")
-    public ResponseEntity<?> getExam(@PathVariable String exam) {
-        ArrayList<Exam> e = examService.getExam(exam);
 
-        if (!exam.equals("Quiz") &&
-                !exam.equals("Midterm") &&
-                !exam.equals("Final")) {
-
-            return ResponseEntity.status(400)
-                    .body(new ApiResponse("Invalid exam category"));
+    public ArrayList<Course>search(){
+        ArrayList<Course>c=new ArrayList<>();
+        for(Course course:courses){
+            if(course.getHaveTeacher()){
+                c.add(course);
+            }
         }
-        if (e.isEmpty()) {
-            return ResponseEntity.status(400).body(new ApiResponse("No exam found"));
+           return c;
         }
-        return ResponseEntity.status(200).body(e);
-    }
 
 }
