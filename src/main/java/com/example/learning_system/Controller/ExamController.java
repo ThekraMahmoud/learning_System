@@ -90,8 +90,16 @@ public class ExamController {
     @GetMapping("/getExam/{exam}")
     public ResponseEntity<?> getExam(@PathVariable String exam) {
         ArrayList<Exam> e = examService.getExam(exam);
+
+        if (!exam.equals("Quiz") &&
+                !exam.equals("Midterm") &&
+                !exam.equals("Final")) {
+
+            return ResponseEntity.status(400)
+                    .body(new ApiResponse("Invalid exam category"));
+        }
         if (e.isEmpty()) {
-            return ResponseEntity.status(404).body(new ApiResponse("No exam found"));
+            return ResponseEntity.status(400).body(new ApiResponse("No exam found"));
         }
         return ResponseEntity.status(200).body(e);
     }
